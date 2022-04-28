@@ -43,7 +43,7 @@ public class Account {
     private Double balance = 0.00D;
 
     @Column(nullable = false)
-    private int PIN;
+    private int pin;
 
     @Column(nullable = false)
     private String password;
