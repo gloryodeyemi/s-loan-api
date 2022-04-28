@@ -37,8 +37,16 @@ public class Account {
     @Column(nullable = false)
     private String country;
 
+    @Column(unique = true, nullable = false)
     private Long accountNumber;
+
     private Double balance = 0.00D;
+
+    @Column(nullable = false)
+    private int PIN;
+
+    @Column(nullable = false)
+    private String password;
 
     @CreationTimestamp
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
