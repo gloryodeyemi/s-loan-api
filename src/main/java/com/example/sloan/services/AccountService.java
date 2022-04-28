@@ -3,9 +3,12 @@ package com.example.sloan.services;
 import com.example.sloan.Repositories.AccountRepository;
 import com.example.sloan.exceptions.ErrorException;
 import com.example.sloan.models.Account;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class AccountService {
@@ -28,4 +31,29 @@ public class AccountService {
         account.setPassword(password);
         return  accountRepository.save(account);
     }
+
+    public Account findById(Long id){
+        return accountRepository.findById(id).orElse(null);
+    }
+
+    public List<Account> findAll(){
+        return accountRepository.findAll();
+    }
+
+    public Account findByEmailAddress(String emailAddress) {
+        return accountRepository.findByEmailAddress(emailAddress);
+    }
+
+    public Account findByAccountNumber(Long accountNumber) {
+        return accountRepository.findByAccountNumber(accountNumber);
+    }
+
+    /*
+    public Account updateAccountDetails(Account account) {
+        Account accountToUpdate = findById(account.getId());
+        BeanUtils.copyProperties(account, accountToUpdate);
+        accountToUpdate.setAccountNumber(accountToUpdate.getAccountNumber());
+        return accountRepository.save(accountToUpdate);
+    }
+     */
 }
