@@ -7,23 +7,23 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
-import java.util.Locale;
-import java.util.Random;
 
 @Entity
 @Data
-public class Transaction {
+public class AccountTransaction {
     @Id
     @Column(unique = true, nullable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long userId;
+    private Long accountId;
     private TType tType;
     private TStatus tStatus;
     private TChannel tChannel;
     private Double amount;
     private String description;
+
+    @Column(unique = true, nullable = false)
     private String tRef;
 
     @CreationTimestamp

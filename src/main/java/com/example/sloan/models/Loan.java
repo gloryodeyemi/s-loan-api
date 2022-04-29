@@ -16,7 +16,7 @@ public class Loan {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long userId;
+    private Long accountId;
     private TType tType;
     private TStatus tStatus;
     private Double amount;
