@@ -25,10 +25,10 @@ public class TransactionController {
         return ResponseEntity.ok(transactionService.findById(id));
     }
 
-    @GetMapping("/ref/{tRef}")
-    public ResponseEntity<AccountTransaction> getByTRef(@PathVariable String tRef) {
-        return ResponseEntity.ok(transactionService.findByRef(tRef));
-    }
+//    @GetMapping("/ref/{tRef}")
+//    public ResponseEntity<AccountTransaction> getByTRef(@PathVariable String tRef) {
+//        return ResponseEntity.ok(transactionService.findByRef(tRef));
+//    }
 
     @GetMapping("/all")
     public ResponseEntity<List<AccountTransaction>> getAll() {

@@ -6,5 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface TransactionRepository extends JpaRepository<AccountTransaction, Long> {
-    AccountTransaction findByTRef(String tRef);
+//    AccountTransaction findByTRef(String tRef);
 }

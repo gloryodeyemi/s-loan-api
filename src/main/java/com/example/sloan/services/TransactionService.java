@@ -30,9 +30,9 @@ public class TransactionService {
         return transactionRepository.findAll();
     }
 
-    public AccountTransaction findByRef(String tRef){
-        return transactionRepository.findByTRef(tRef);
-    }
+//    public AccountTransaction findByRef(String tRef){
+//        return transactionRepository.findByTRef(tRef);
+//    }
 
     public AccountTransaction saveTransaction(AccountTransaction accountTransaction) throws ErrorException{
         Account account = accountService.findById(accountTransaction.getAccountId());
