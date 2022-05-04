@@ -1,5 +1,6 @@
 package com.example.sloan.controllers;
 
+import com.example.sloan.dtos.TransactionDto;
 import com.example.sloan.exceptions.ErrorException;
 import com.example.sloan.models.AccountTransaction;
 import com.example.sloan.services.TransactionService;
@@ -12,12 +13,13 @@ import java.util.List;
 @RestController
 @RequestMapping("account-transaction")
 public class TransactionController {
+
     @Autowired
     TransactionService transactionService;
 
     @PostMapping()
-    public ResponseEntity<AccountTransaction> saveTransaction(@RequestBody AccountTransaction transaction) throws ErrorException {
-        return ResponseEntity.ok(transactionService.saveTransaction(transaction));
+    public ResponseEntity<AccountTransaction> saveTransaction(@RequestBody TransactionDto transactionDto) throws ErrorException {
+        return ResponseEntity.ok(transactionService.saveTransaction(transactionDto));
     }
 
     @GetMapping("/{id}")
