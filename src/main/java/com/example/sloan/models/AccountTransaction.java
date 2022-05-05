@@ -19,7 +19,7 @@ public class AccountTransaction {
     private Long accountId;
     private TType tType;
     private TStatus tStatus;
-    private TChannel tChannel;
+    private Channel channel;
     private Double amount;
     private String description;
 

@@ -5,15 +5,16 @@ import com.example.sloan.Repositories.TransactionRepository;
 import com.example.sloan.dtos.TransactionDto;
 import com.example.sloan.exceptions.ErrorException;
 import com.example.sloan.models.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Random;
 
 @Service
+@Slf4j
 public class TransactionService {
     @Autowired
     TransactionRepository transactionRepository;
@@ -37,6 +38,7 @@ public class TransactionService {
 //    }
 
     public AccountTransaction saveTransaction(TransactionDto transactionDto) throws ErrorException{
+        log.info("transactionDto::{}", transactionDto);
         Account account = accountService.findById(transactionDto.getAccountId());
         if (account == null){
             throw new ErrorException("Account not found!");
@@ -47,23 +49,24 @@ public class TransactionService {
 //        accountTransaction.setTChannel(transactionDto.getTChannel());
 //        accountTransaction.setAmount(transactionDto.getAmount());
 //        accountTransaction.setDescription(transactionDto.getDescription());
+        System.out.println(transactionDto.getChannel());
         BeanUtils.copyProperties(transactionDto, accountTransaction);
-        TChannel tChannel = accountTransaction.getTChannel();
+        Channel tChannel = accountTransaction.getChannel();
 
         Random randN = new Random( System.currentTimeMillis() );
         int randomNumber = (1 + randN.nextInt(2)) * 10000 + randN.nextInt(10000);
-        System.out.println("random number = " + randomNumber);
+//        System.out.println("random number = " + randomNumber);
         String tRef = "Ref-" + tChannel.name() + "-" + randomNumber;
-        System.out.println("transaction reference = " + tRef);
+//        System.out.println("transaction reference = " + tRef);
         accountTransaction.setTRef(tRef);
 //        System.out.println(accountTransaction.getTChannel());
 
-        if (tChannel.equals(TChannel.SAVE)){
+        if (tChannel.equals(Channel.SAVE)){
             account.setBalance(account.getBalance() + accountTransaction.getAmount());
             accountTransaction.setTStatus(TStatus.SUCCESSFUL);
             accountTransaction.setTType(TType.CREDIT);
         }
-        if (tChannel.equals(TChannel.WITHDRAW)){
+        if (tChannel.equals(Channel.WITHDRAW)){
             if (account.getBalance() < accountTransaction.getAmount()){
                 accountTransaction.setTStatus(TStatus.FAILED);
                 accountTransaction.setTType(TType.DEBIT);

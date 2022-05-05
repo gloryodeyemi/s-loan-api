@@ -1,6 +1,6 @@
 package com.example.sloan.models;
 
-public enum TChannel {
+public enum Channel {
     SAVE,
     WITHDRAW,
     LOAN,
