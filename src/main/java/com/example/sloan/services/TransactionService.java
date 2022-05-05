@@ -49,24 +49,28 @@ public class TransactionService {
 //        accountTransaction.setTChannel(transactionDto.getTChannel());
 //        accountTransaction.setAmount(transactionDto.getAmount());
 //        accountTransaction.setDescription(transactionDto.getDescription());
-        System.out.println(transactionDto.getChannel());
+//        System.out.println(transactionDto.getChannel());
         BeanUtils.copyProperties(transactionDto, accountTransaction);
         Channel tChannel = accountTransaction.getChannel();
 
         Random randN = new Random( System.currentTimeMillis() );
         int randomNumber = (1 + randN.nextInt(2)) * 10000 + randN.nextInt(10000);
-//        System.out.println("random number = " + randomNumber);
         String tRef = "Ref-" + tChannel.name() + "-" + randomNumber;
-//        System.out.println("transaction reference = " + tRef);
         accountTransaction.setTRef(tRef);
-//        System.out.println(accountTransaction.getTChannel());
 
         if (tChannel.equals(Channel.SAVE)){
             account.setBalance(account.getBalance() + accountTransaction.getAmount());
             accountTransaction.setTStatus(TStatus.SUCCESSFUL);
             accountTransaction.setTType(TType.CREDIT);
-        }
-        if (tChannel.equals(Channel.WITHDRAW)){
+        } else if (tChannel.equals(Channel.LOAN)){
+            accountTransaction.setTType(TType.CREDIT);
+
+            if (transactionDto.getTStatus().equals(TStatus.FAILED)){
+                transactionRepository.save(accountTransaction);
+                throw new ErrorException(transactionDto.getMessage());
+            }
+            account.setBalance(account.getBalance() + accountTransaction.getAmount());
+        } else if (tChannel.equals(Channel.WITHDRAW)){
             if (account.getBalance() < accountTransaction.getAmount()){
                 accountTransaction.setTStatus(TStatus.FAILED);
                 accountTransaction.setTType(TType.DEBIT);
@@ -76,6 +80,10 @@ public class TransactionService {
             account.setBalance(account.getBalance() - accountTransaction.getAmount());
             accountTransaction.setTStatus(TStatus.SUCCESSFUL);
             accountTransaction.setTType(TType.DEBIT);
+        } else if ((tChannel.equals(Channel.REPAY))) {
+            return null;
+        } else {
+            throw new ErrorException("Invalid channel");
         }
         accountRepository.save(account);
         return transactionRepository.save(accountTransaction);

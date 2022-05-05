@@ -1,8 +1,8 @@
 package com.example.sloan.models;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
-import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import javax.persistence.*;
@@ -19,14 +19,19 @@ public class Loan {
     private Long accountId;
     private TType tType;
     private TStatus tStatus;
+    private Channel channel;
     private Double amount;
     private LoanType loanType;
+
+    @ManyToOne
+    @JsonIgnoreProperties({"id", "loanType", "dateCreated", "dateUpdated"})
+    private LoanTypePrice loanTypePrice;
+
     private Double interest;
     private String description;
     private String loanRef;
-    private LoanStatus loanStatus;
+    private LStatus loanStatus;
 
-    @CreationTimestamp
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Column(updatable = false)
     private LocalDateTime dateBorrowed;
