@@ -36,4 +36,9 @@ public class TransactionController {
     public ResponseEntity<List<AccountTransaction>> getAll() {
         return ResponseEntity.ok(transactionService.findAll());
     }
+
+    @GetMapping("/all/{accountId}")
+    public ResponseEntity<List<AccountTransaction>> getAllTransactionsByAccountId(@PathVariable Long accountId) {
+        return ResponseEntity.ok(transactionService.findAllTransactionsByAccountId(accountId));
+    }
 }

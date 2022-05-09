@@ -40,7 +40,8 @@ public class Account {
     @Column(unique = true, nullable = false)
     private Long accountNumber;
 
-    private Double balance = 0.00D;
+    private Double savingsBalance = 0.00D;
+    private Double loanBalance = 0.00D;
 
     @Column(nullable = false)
     private int pin;

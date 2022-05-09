@@ -48,8 +48,16 @@ public class AccountService {
         return accountRepository.findByAccountNumber(accountNumber);
     }
 
-    public Account accountValidation(Long accountId) throws ErrorException{
+    public Account accountValidationById(Long accountId) throws ErrorException{
         Account account = findById(accountId);
+        if (account == null){
+            throw new ErrorException("Account not found!");
+        }
+        return account;
+    }
+
+    public Account accountValidationByNumber(Long accountNumber) throws ErrorException{
+        Account account = findByAccountNumber(accountNumber);
         if (account == null){
             throw new ErrorException("Account not found!");
         }

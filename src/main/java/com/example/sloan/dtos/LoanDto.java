@@ -7,8 +7,8 @@ import lombok.Data;
 
 @Data
 public class LoanDto {
-    private Long accountId;
-    private Channel channel;
+    private Long accountNumber;
+//    private Channel channel;
     private Double amount;
     private LoanType loanType;
     private String description;

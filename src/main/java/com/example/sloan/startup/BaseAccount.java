@@ -31,7 +31,7 @@ public class BaseAccount {
             account.setCountry("Nigeria");
             long number = (long) Math.floor(Math.random() * 9_000_000_000L) + 1_000_000_000L;
             account.setAccountNumber(number);
-            account.setBalance(1000000.00D);
+            account.setSavingsBalance(1000000.00D);
             String password = passwordEncoder.encode("Sloan989!");
             account.setPassword(password);
             account.setPin(1232);

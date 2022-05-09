@@ -6,7 +6,7 @@ import lombok.Data;
 
 @Data
 public class TransactionDto {
-    private Long accountId;
+    private Long accountNo;
     private Channel channel;
     private Double amount;
     private TStatus tStatus;
