@@ -28,7 +28,10 @@ public class Loan {
     private LoanTypePrice loanTypePrice;
 
     private Double interest;
+    private Double overdueInterest = 0.0D;
+    private Double totalInterest;
     private String description;
+    private String narration;
     private String loanRef;
     private LStatus loanStatus;
 

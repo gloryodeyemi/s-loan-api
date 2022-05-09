@@ -39,10 +39,7 @@ public class TransactionService {
 
     public AccountTransaction saveTransaction(TransactionDto transactionDto) throws ErrorException{
         log.info("transactionDto::{}", transactionDto);
-        Account account = accountService.findById(transactionDto.getAccountId());
-        if (account == null){
-            throw new ErrorException("Account not found!");
-        }
+        Account account = accountService.accountValidation(transactionDto.getAccountId());
         AccountTransaction accountTransaction = new AccountTransaction();
 //        accountTransaction.setAccountId(transactionDto.getAccountId());
 ////        TChannel tChannel = TChannel.valueOf(transactionDto.getTChannel());
@@ -62,24 +59,29 @@ public class TransactionService {
             account.setBalance(account.getBalance() + accountTransaction.getAmount());
             accountTransaction.setTStatus(TStatus.SUCCESSFUL);
             accountTransaction.setTType(TType.CREDIT);
+            accountTransaction.setNarration("Account deposited - SAVE");
         } else if (tChannel.equals(Channel.LOAN)){
             accountTransaction.setTType(TType.CREDIT);
 
             if (transactionDto.getTStatus().equals(TStatus.FAILED)){
+                accountTransaction.setNarration("Account deposit failed - LOAN");
                 transactionRepository.save(accountTransaction);
                 throw new ErrorException(transactionDto.getMessage());
             }
             account.setBalance(account.getBalance() + accountTransaction.getAmount());
+            accountTransaction.setNarration("Account deposited - LOAN");
         } else if (tChannel.equals(Channel.WITHDRAW)){
             if (account.getBalance() < accountTransaction.getAmount()){
                 accountTransaction.setTStatus(TStatus.FAILED);
                 accountTransaction.setTType(TType.DEBIT);
+                accountTransaction.setNarration("Insufficient balance");
                 transactionRepository.save(accountTransaction);
-                throw new ErrorException("Insufficient Balance!");
+                throw new ErrorException("Insufficient balance!");
             }
             account.setBalance(account.getBalance() - accountTransaction.getAmount());
             accountTransaction.setTStatus(TStatus.SUCCESSFUL);
             accountTransaction.setTType(TType.DEBIT);
+            accountTransaction.setNarration("Withdrawal");
         } else if ((tChannel.equals(Channel.REPAY))) {
             return null;
         } else {

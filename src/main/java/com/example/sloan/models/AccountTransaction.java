@@ -22,6 +22,7 @@ public class AccountTransaction {
     private Channel channel;
     private Double amount;
     private String description;
+    private String narration;
 
     @Column(unique = true, nullable = false)
     private String tRef;
