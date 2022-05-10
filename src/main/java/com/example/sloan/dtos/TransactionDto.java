@@ -9,6 +9,7 @@ public class TransactionDto {
     private Long accountNo;
     private Channel channel;
     private Double amount;
+    private Double loanToRepay;
     private TStatus tStatus;
     private String message;
     private String description;

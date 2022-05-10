@@ -50,10 +50,11 @@ public class TransactionService {
         BeanUtils.copyProperties(transactionDto, accountTransaction);
         Channel tChannel = accountTransaction.getChannel();
 
-        Random randN = new Random( System.currentTimeMillis() );
-        int randomNumber = (1 + randN.nextInt(2)) * 10000 + randN.nextInt(10000);
-        String tRef = "Ref-" + tChannel.name() + "-" + randomNumber;
-        accountTransaction.setTRef(tRef);
+//        generateRef(tChannel);
+//        Random randN = new Random( System.currentTimeMillis() );
+//        int randomNumber = (1 + randN.nextInt(2)) * 10000 + randN.nextInt(10000);
+//        String tRef = "Ref-" + tChannel.name() + "-" + randomNumber;
+        accountTransaction.setTRef(generateRef(tChannel));
         accountTransaction.setAccountId(account.getId());
 
         if (tChannel.equals(Channel.SAVE)){
@@ -88,6 +89,12 @@ public class TransactionService {
             accountTransaction.setTType(TType.DEBIT);
             accountTransaction.setNarration("Withdrawal successful");
         } else if ((tChannel.equals(Channel.REPAY))) {
+            // deposit the money in savings
+//            account.setSavingsBalance(account.getSavingsBalance() + accountTransaction.getAmount());
+//            accountTransaction.setTStatus(TStatus.SUCCESSFUL);
+//            accountTransaction.setTType(TType.CREDIT);
+//            accountTransaction.setNarration("Account deposited - SAVE");
+            // repay the loan from savings
             return null;
         } else {
             throw new ErrorException("Invalid channel");
@@ -96,6 +103,34 @@ public class TransactionService {
         accountTransaction.setSavingsBal(savedAccount.getSavingsBalance());
         accountTransaction.setLoanBal(savedAccount.getLoanBalance());
         return transactionRepository.save(accountTransaction);
+    }
+
+    public AccountTransaction repayLoanTransaction(TransactionDto transactionDto) throws ErrorException{
+        if (transactionDto.getAmount() > 0) {
+            saveTransaction(transactionDto);
+        }
+        transactionDto.setChannel(Channel.REPAY);
+        Account account = accountService.accountValidationByNumber(transactionDto.getAccountNo());
+        AccountTransaction accountTransaction = new AccountTransaction();
+        BeanUtils.copyProperties(transactionDto, accountTransaction);
+        accountTransaction.setAccountId(account.getId());
+        accountTransaction.setAmount(transactionDto.getLoanToRepay());
+        accountTransaction.setTRef(generateRef(Channel.REPAY));
+        account.setSavingsBalance(account.getSavingsBalance() - transactionDto.getLoanToRepay());
+        account.setLoanBalance(account.getLoanBalance() + transactionDto.getLoanToRepay());
+        Account savedAccount = accountRepository.save(account);
+        accountTransaction.setTStatus(TStatus.SUCCESSFUL);
+        accountTransaction.setTType(TType.DEBIT);
+        accountTransaction.setNarration("Loan repaid successfully");
+        accountTransaction.setSavingsBal(savedAccount.getSavingsBalance());
+        accountTransaction.setLoanBal(savedAccount.getLoanBalance());
+        return transactionRepository.save(accountTransaction);
+    }
+
+    public String generateRef(Channel channel){
+        Random randN = new Random( System.currentTimeMillis() );
+        int randomNumber = (1 + randN.nextInt(2)) * 10000 + randN.nextInt(10000);
+        return "Ref-" + channel.name() + "-" + randomNumber;
     }
 
     public List<AccountTransaction> findAllTransactionsByAccountId(Long accountId){

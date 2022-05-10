@@ -3,6 +3,7 @@ package com.example.sloan.services;
 import com.example.sloan.Repositories.AccountRepository;
 import com.example.sloan.Repositories.LoanRepository;
 import com.example.sloan.dtos.LoanDto;
+import com.example.sloan.dtos.RepayDto;
 import com.example.sloan.dtos.TransactionDto;
 import com.example.sloan.exceptions.ErrorException;
 import com.example.sloan.models.*;
@@ -101,5 +102,21 @@ public class LoanService {
         transactionDto.setAccountNo(7665125013L);
         transactionService.saveTransaction(transactionDto);
         return loanRepository.save(loan);
+    }
+
+    public Loan repayLoan(RepayDto repayDto) {
+        Loan loan = findById(repayDto.getLoanId());
+        Loan updatedLoan = new Loan();
+
+        LocalDateTime repayDate =  LocalDateTime.now();
+        Long daysDiff = ChronoUnit.DAYS.between(loan.getExpectedRepayDate().toLocalDate(), repayDate.toLocalDate());
+        if (daysDiff > 0) {
+            double overdueInterest = (0.1 * loan.getAmount() * daysDiff)/100;
+            loan.setOverdueInterest(overdueInterest);
+            loan.setTotalInterest(loan.getTotalInterest() + overdueInterest);
+            loan.setTotalAmount(loan.getTotalAmount() + overdueInterest);
+            BeanUtils.copyProperties(loanRepository.save(loan), updatedLoan);
+        }
+        return null;
     }
 }
