@@ -66,6 +66,8 @@ public class TransactionService {
 
             if (transactionDto.getTStatus().equals(TStatus.FAILED)){
                 accountTransaction.setNarration("Account deposit failed - LOAN");
+                accountTransaction.setSavingsBal(account.getSavingsBalance());
+                accountTransaction.setLoanBal(account.getLoanBalance());
                 transactionRepository.save(accountTransaction);
                 throw new ErrorException(transactionDto.getMessage());
             }
@@ -76,6 +78,8 @@ public class TransactionService {
                 accountTransaction.setTStatus(TStatus.FAILED);
                 accountTransaction.setTType(TType.DEBIT);
                 accountTransaction.setNarration("Insufficient balance");
+                accountTransaction.setSavingsBal(account.getSavingsBalance());
+                accountTransaction.setLoanBal(account.getLoanBalance());
                 transactionRepository.save(accountTransaction);
                 throw new ErrorException("Insufficient balance!");
             }
@@ -88,7 +92,9 @@ public class TransactionService {
         } else {
             throw new ErrorException("Invalid channel");
         }
-        accountRepository.save(account);
+        Account savedAccount = accountRepository.save(account);
+        accountTransaction.setSavingsBal(savedAccount.getSavingsBalance());
+        accountTransaction.setLoanBal(savedAccount.getLoanBalance());
         return transactionRepository.save(accountTransaction);
     }
 

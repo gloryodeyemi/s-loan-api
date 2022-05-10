@@ -21,6 +21,8 @@ public class AccountTransaction {
     private TStatus tStatus;
     private Channel channel;
     private Double amount;
+    private Double savingsBal;
+    private Double loanBal;
     private String description;
     private String narration;
 
