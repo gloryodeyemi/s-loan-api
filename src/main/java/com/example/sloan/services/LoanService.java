@@ -35,7 +35,23 @@ public class LoanService {
     LoanTypePriceService loanTypePriceService;
 
     public Loan findById(Long id){
-        return loanRepository.findById(id).orElse(null);
+        Loan loan = loanRepository.findById(id).orElse(null);
+        if (loan == null){
+            return null;
+        }
+        LocalDateTime repayDate =  LocalDateTime.now();
+        Long daysDiff = ChronoUnit.DAYS.between(loan.getExpectedRepayDate().toLocalDate(), repayDate.toLocalDate());
+        if (daysDiff > 0) {
+            double overdueInterest = (0.1 * loan.getAmount() * daysDiff)/100;
+            loan.setOverdueInterest(overdueInterest);
+            loan.setTotalInterest(loan.getTotalInterest() + overdueInterest);
+            loan.setTotalAmount(loan.getTotalAmount() + overdueInterest);
+            loan.setAmountLeftToPay(loan.getAmountLeftToPay() + overdueInterest);
+            return loanRepository.save(loan);
+//            BeanUtils.copyProperties(loanRepository.save(loan), updatedLoan);
+        }
+        return loan;
+//        return loanRepository.findById(id).orElse(null);
     }
 
     public List<Loan> findAll(){
@@ -64,6 +80,7 @@ public class LoanService {
         loan.setInterest(interest);
         loan.setTotalInterest(interest + loan.getOverdueInterest());
         loan.setTotalAmount(loanDto.getAmount() + loan.getTotalInterest());
+        loan.setAmountLeftToPay(loan.getTotalAmount());
         // set expected return date
         loan.setDateBorrowed(LocalDateTime.now());
         LocalDateTime date = ChronoUnit.DAYS.addTo(loan.getDateBorrowed().toLocalDate(), loanTypePrice.getNoOfDays()).atStartOfDay();
@@ -104,19 +121,40 @@ public class LoanService {
         return loanRepository.save(loan);
     }
 
-    public Loan repayLoan(RepayDto repayDto) {
+    public Loan repayLoan(RepayDto repayDto) throws ErrorException{
         Loan loan = findById(repayDto.getLoanId());
-        Loan updatedLoan = new Loan();
-
+        Account userAccount = accountService.accountValidationById(loan.getAccountId());
+//        Loan updatedLoan = new Loan();
+//        BeanUtils.copyProperties(loan, updatedLoan);
         LocalDateTime repayDate =  LocalDateTime.now();
-        Long daysDiff = ChronoUnit.DAYS.between(loan.getExpectedRepayDate().toLocalDate(), repayDate.toLocalDate());
-        if (daysDiff > 0) {
-            double overdueInterest = (0.1 * loan.getAmount() * daysDiff)/100;
-            loan.setOverdueInterest(overdueInterest);
-            loan.setTotalInterest(loan.getTotalInterest() + overdueInterest);
-            loan.setTotalAmount(loan.getTotalAmount() + overdueInterest);
-            BeanUtils.copyProperties(loanRepository.save(loan), updatedLoan);
+//        Long daysDiff = ChronoUnit.DAYS.between(loan.getExpectedRepayDate().toLocalDate(), repayDate.toLocalDate());
+//        if (daysDiff > 0) {
+//            double overdueInterest = (0.1 * loan.getAmount() * daysDiff)/100;
+//            loan.setOverdueInterest(overdueInterest);
+//            loan.setTotalInterest(loan.getTotalInterest() + overdueInterest);
+//            loan.setTotalAmount(loan.getTotalAmount() + overdueInterest);
+//            loan.setAmountLeftToPay(loan.getAmountLeftToPay() + overdueInterest);
+//            BeanUtils.copyProperties(loanRepository.save(loan), updatedLoan);
+//        }
+        TransactionDto transactionDto = new TransactionDto();
+        transactionDto.setLoanToRepay(repayDto.getLoanToRepay());
+        transactionDto.setAmount(repayDto.getAmountToSave());
+        transactionDto.setDescription(repayDto.getDescription());
+        transactionDto.setAccountNo(userAccount.getAccountNumber());
+        if (repayDto.getAmountToSave() > 0) {
+            transactionDto.setChannel(Channel.SAVE);
+            transactionService.saveTransaction(transactionDto);
         }
-        return null;
+        System.out.println(userAccount.getSavingsBalance());
+        transactionDto.setChannel(Channel.REPAY);
+        transactionService.repayLoanTransaction(transactionDto);
+        loan.setRepayDate(repayDate);
+        loan.setLoanStatus(LStatus.REPAID);
+        if (repayDto.getLoanToRepay() < loan.getAmountLeftToPay()) {
+            loan.setLoanStatus(LStatus.PARTIAL_PAYMENT);
+        }
+        loan.setAmountLeftToPay(loan.getAmountLeftToPay() - repayDto.getLoanToRepay());
+        loan.setAmountPaid(loan.getAmountPaid() + repayDto.getLoanToRepay());
+        return loanRepository.save(loan);
     }
 }

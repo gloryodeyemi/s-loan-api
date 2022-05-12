@@ -1,6 +1,7 @@
 package com.example.sloan.controllers;
 
 import com.example.sloan.dtos.LoanDto;
+import com.example.sloan.dtos.RepayDto;
 import com.example.sloan.dtos.TransactionDto;
 import com.example.sloan.exceptions.ErrorException;
 import com.example.sloan.models.AccountTransaction;
@@ -21,6 +22,11 @@ public class LoanController {
     @PostMapping()
     public ResponseEntity<Loan> saveLoan(@RequestBody LoanDto loanDto) throws ErrorException {
         return ResponseEntity.ok(loanService.saveLoan(loanDto));
+    }
+
+    @PostMapping("/repay")
+    public ResponseEntity<Loan> repayLoan(@RequestBody RepayDto repayDto) throws ErrorException {
+        return ResponseEntity.ok(loanService.repayLoan(repayDto));
     }
 
     @GetMapping("/{id}")

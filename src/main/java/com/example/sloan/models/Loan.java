@@ -31,6 +31,8 @@ public class Loan {
     private Double overdueInterest = 0.0D;
     private Double totalInterest;
     private Double totalAmount;
+    private Double amountPaid = 0.0D;
+    private Double amountLeftToPay;
     private String description;
     private String narration;
     private String loanRef;

@@ -33,27 +33,12 @@ public class TransactionService {
         return transactionRepository.findAll();
     }
 
-//    public AccountTransaction findByRef(String tRef){
-//        return transactionRepository.findByTRef(tRef);
-//    }
-
     public AccountTransaction saveTransaction(TransactionDto transactionDto) throws ErrorException{
         log.info("transactionDto::{}", transactionDto);
         Account account = accountService.accountValidationByNumber(transactionDto.getAccountNo());
         AccountTransaction accountTransaction = new AccountTransaction();
-//        accountTransaction.setAccountId(transactionDto.getAccountId());
-////        TChannel tChannel = TChannel.valueOf(transactionDto.getTChannel());
-//        accountTransaction.setTChannel(transactionDto.getTChannel());
-//        accountTransaction.setAmount(transactionDto.getAmount());
-//        accountTransaction.setDescription(transactionDto.getDescription());
-//        System.out.println(transactionDto.getChannel());
         BeanUtils.copyProperties(transactionDto, accountTransaction);
         Channel tChannel = accountTransaction.getChannel();
-
-//        generateRef(tChannel);
-//        Random randN = new Random( System.currentTimeMillis() );
-//        int randomNumber = (1 + randN.nextInt(2)) * 10000 + randN.nextInt(10000);
-//        String tRef = "Ref-" + tChannel.name() + "-" + randomNumber;
         accountTransaction.setTRef(generateRef(tChannel));
         accountTransaction.setAccountId(account.getId());
 
@@ -88,14 +73,6 @@ public class TransactionService {
             accountTransaction.setTStatus(TStatus.SUCCESSFUL);
             accountTransaction.setTType(TType.DEBIT);
             accountTransaction.setNarration("Withdrawal successful");
-        } else if ((tChannel.equals(Channel.REPAY))) {
-            // deposit the money in savings
-//            account.setSavingsBalance(account.getSavingsBalance() + accountTransaction.getAmount());
-//            accountTransaction.setTStatus(TStatus.SUCCESSFUL);
-//            accountTransaction.setTType(TType.CREDIT);
-//            accountTransaction.setNarration("Account deposited - SAVE");
-            // repay the loan from savings
-            return null;
         } else {
             throw new ErrorException("Invalid channel");
         }
@@ -106,16 +83,21 @@ public class TransactionService {
     }
 
     public AccountTransaction repayLoanTransaction(TransactionDto transactionDto) throws ErrorException{
-        if (transactionDto.getAmount() > 0) {
-            saveTransaction(transactionDto);
-        }
-        transactionDto.setChannel(Channel.REPAY);
         Account account = accountService.accountValidationByNumber(transactionDto.getAccountNo());
         AccountTransaction accountTransaction = new AccountTransaction();
         BeanUtils.copyProperties(transactionDto, accountTransaction);
         accountTransaction.setAccountId(account.getId());
         accountTransaction.setAmount(transactionDto.getLoanToRepay());
         accountTransaction.setTRef(generateRef(Channel.REPAY));
+        if (account.getSavingsBalance() < transactionDto.getLoanToRepay()){
+            accountTransaction.setTStatus(TStatus.FAILED);
+            accountTransaction.setTType(TType.DEBIT);
+            accountTransaction.setNarration("Loan repay failed");
+            accountTransaction.setSavingsBal(account.getSavingsBalance());
+            accountTransaction.setLoanBal(account.getLoanBalance());
+            transactionRepository.save(accountTransaction);
+            throw new ErrorException("Loan repay failed due to insufficient balance. Please, fund your savings account.");
+        }
         account.setSavingsBalance(account.getSavingsBalance() - transactionDto.getLoanToRepay());
         account.setLoanBalance(account.getLoanBalance() + transactionDto.getLoanToRepay());
         Account savedAccount = accountRepository.save(account);
