@@ -9,6 +9,7 @@ import com.example.sloan.exceptions.ErrorException;
 import com.example.sloan.models.*;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -35,24 +36,32 @@ public class LoanService {
     LoanTypePriceService loanTypePriceService;
 
     public Loan findById(Long id){
-        Loan loan = loanRepository.findById(id).orElse(null);
-        if (loan == null){
-            return null;
-        }
-        LocalDateTime repayDate =  LocalDateTime.now();
-        Long daysDiff = ChronoUnit.DAYS.between(loan.getExpectedRepayDate().toLocalDate(), repayDate.toLocalDate());
-        if (daysDiff > 0) {
-            double overdueInterest = (0.1 * loan.getAmount() * daysDiff)/100;
-            loan.setOverdueInterest(overdueInterest);
-            loan.setTotalInterest(loan.getTotalInterest() + overdueInterest);
-            loan.setTotalAmount(loan.getTotalAmount() + overdueInterest);
-            loan.setAmountLeftToPay(loan.getAmountLeftToPay() + overdueInterest);
-            return loanRepository.save(loan);
-//            BeanUtils.copyProperties(loanRepository.save(loan), updatedLoan);
-        }
-        return loan;
-//        return loanRepository.findById(id).orElse(null);
+       return loanRepository.findById(id).orElse(null);
     }
+
+//    @Scheduled(cron = "0/20 * * * * ?")
+//    public void scheduledTest(){
+//        List<Loan> allLoans = findAll();
+//        for (Loan loan : allLoans) {
+//            if (!loan.getLoanStatus().equals(LStatus.REPAID)){
+//                LoanTypePrice loanType = loan.getLoanTypePrice();
+//                Double interestPerDay = (loanType.getInterestRate()/100) / loanType.getNoOfDays();
+//                Double interest = interestPerDay * loan.getAmount();
+//                System.out.println("interest = " + interest);
+//                loan.setInterest(loan.getInterest() + interest);
+//                LocalDateTime currentDate =  LocalDateTime.now();
+//                Long daysDiff = ChronoUnit.DAYS.between(loan.getExpectedRepayDate().toLocalDate(), currentDate.toLocalDate());
+//                if (daysDiff > 0){
+//                    loan.setOverdueInterest(loan.getOverdueInterest() + interest);
+//                }
+//                loan.setTotalInterest(loan.getInterest() + loan.getOverdueInterest());
+//                loan.setTotalAmount(loan.getAmount() + loan.getTotalInterest());
+//                loan.setAmountLeftToPay(loan.getTotalAmount() - loan.getAmountPaid());
+//                loanRepository.save(loan);
+//            }
+//        }
+//        System.out.println("running scheduled task");
+//    }
 
     public List<Loan> findAll(){
         return loanRepository.findAll();
@@ -70,15 +79,13 @@ public class LoanService {
         // generate loan reference
         Random randN = new Random( System.currentTimeMillis() );
         int randomNumber = (1 + randN.nextInt(2)) * 10000 + randN.nextInt(10000);
-        String loanRef = "Ref-" + userAccount.getFirstName().toLowerCase(Locale.ROOT) + "-" + userAccount.getLastName().toLowerCase(Locale.ROOT) + "-" + randomNumber;
+        String loanRef = "Ref-" + userAccount.getFirstName().toLowerCase(Locale.ROOT) + "-" + userAccount.getLastName().toLowerCase(Locale.ROOT) +
+                "-" + randomNumber;
         loan.setLoanRef(loanRef);
         // set loan type
         LoanTypePrice loanTypePrice = loanTypePriceService.getLoanPriceByLoanType(loanDto.getLoanType());
         loan.setLoanTypePrice(loanTypePrice);
-        // calculate interest
-        Double interest = (loanTypePrice.getInterestRate() * loan.getAmount())/100;
-        loan.setInterest(interest);
-        loan.setTotalInterest(interest + loan.getOverdueInterest());
+        // set other entities
         loan.setTotalAmount(loanDto.getAmount() + loan.getTotalInterest());
         loan.setAmountLeftToPay(loan.getTotalAmount());
         // set expected return date
@@ -87,30 +94,35 @@ public class LoanService {
         loan.setExpectedRepayDate(date);
         loan.setTType(TType.CREDIT);
         loan.setLoanStatus(LStatus.PENDING);
+        // check if amount is within loan type limits
+        switch (loanDto.getLoanType()){
+            case ANNUAL:
+                if (loanDto.getAmount() < loanTypePrice.getMinAmount()){
+                    failedLoan(loan, userAccount, "Amount limit error", "Amount is lesser than the minimum amount for this loan type." +
+                            " Please enter a bigger amount.");
+                }
+                break;
+            case WEEKLY: case BI_WEEKLY: case MONTHLY: case QUARTERLY: case BI_ANNUAL:
+                if (loanDto.getAmount() < loanTypePrice.getMinAmount() || loanDto.getAmount() > loanTypePrice.getMaxAmount()) {
+                    failedLoan(loan, userAccount, "Amount limit error", "Please enter an amount within the limits of this loan type.");
+                }
+                break;
+            default:
+                failedLoan(loan, userAccount, "Loan type error", "Please choose a valid loan type");
+        }
         // check if customer is eligible to borrow amount
-        TransactionDto transactionDto = new TransactionDto();
-        transactionDto.setAccountNo(loanDto.getAccountNumber());
         if (loan.getAmount() > ((userAccount.getSavingsBalance() * 2) + userAccount.getLoanBalance())){
             // if not eligible
-            loan.setTStatus(TStatus.FAILED);
-            loan.setNarration("Ineligible to borrow amount");
-            loanRepository.save(loan);
-            BeanUtils.copyProperties(loan, transactionDto);
-            transactionDto.setMessage("You are not eligible to borrow that amount, please try with a lesser amount.");
-            transactionService.saveTransaction(transactionDto);
+            failedLoan(loan, userAccount, "Ineligible to borrow amount", "You are not eligible to borrow that amount, please try with" +
+                    " a lesser amount.");
         }
         // if eligible
         Double companyBal = companyAccount.getSavingsBalance();
         if (companyBal < loanDto.getAmount()) {
-            loan.setTStatus(TStatus.FAILED);
-            loan.setNarration("Operation failed");
-            loanRepository.save(loan);
-            BeanUtils.copyProperties(loan, transactionDto);
-            transactionDto.setMessage("Something went wrong!");
-            transactionService.saveTransaction(transactionDto);
+            failedLoan(loan, userAccount, "Operation failed", "Something went wrong!");
         }
-//        companyAccount.setSavingsBalance(companyBal - loanDto.getAmount());
-//        accountRepository.save(companyAccount);
+        TransactionDto transactionDto = new TransactionDto();
+        transactionDto.setAccountNo(loanDto.getAccountNumber());
         loan.setTStatus(TStatus.SUCCESSFUL);
         loan.setNarration("Loan successful");
         BeanUtils.copyProperties(loan, transactionDto);
@@ -119,6 +131,40 @@ public class LoanService {
         transactionDto.setAccountNo(7665125013L);
         transactionService.saveTransaction(transactionDto);
         return loanRepository.save(loan);
+    }
+
+    public void failedLoan(Loan loan, Account account, String narration, String message) throws ErrorException{
+        TransactionDto transactionDto = new TransactionDto();
+        transactionDto.setAccountNo(account.getAccountNumber());
+        loan.setTStatus(TStatus.FAILED);
+        loan.setNarration(narration);
+        loanRepository.save(loan);
+        BeanUtils.copyProperties(loan, transactionDto);
+        transactionDto.setMessage(message);
+        transactionService.saveTransaction(transactionDto);
+    }
+
+    @Scheduled(cron = "0 0 0 * * ?")
+    public void scheduledLoanInterestCalc(){
+        List<Loan> allLoans = findAll();
+        for (Loan loan : allLoans) {
+            if ((!loan.getLoanStatus().equals(LStatus.REPAID)) && loan.getTStatus().equals(TStatus.SUCCESSFUL)){
+                LoanTypePrice loanType = loan.getLoanTypePrice();
+                Double interestPerDay = (loanType.getInterestRate()/100) / loanType.getNoOfDays();
+                Double interest = interestPerDay * loan.getAmount();
+                loan.setInterest(loan.getInterest() + interest);
+                LocalDateTime currentDate =  LocalDateTime.now();
+                Long daysDiff = ChronoUnit.DAYS.between(loan.getExpectedRepayDate().toLocalDate(), currentDate.toLocalDate());
+                if (daysDiff > 0){
+                    loan.setOverdueInterest(loan.getOverdueInterest() + interest);
+                }
+                loan.setTotalInterest(loan.getInterest() + loan.getOverdueInterest());
+                loan.setTotalAmount(loan.getAmount() + loan.getTotalInterest());
+                loan.setAmountLeftToPay(loan.getTotalAmount() - loan.getAmountPaid());
+                loanRepository.save(loan);
+            }
+        }
+        System.out.println("running scheduled task");
     }
 
     public Loan repayLoan(RepayDto repayDto) throws ErrorException{

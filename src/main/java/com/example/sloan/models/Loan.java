@@ -27,9 +27,9 @@ public class Loan {
     @JsonIgnoreProperties({"id", "loanType", "dateCreated", "dateUpdated"})
     private LoanTypePrice loanTypePrice;
 
-    private Double interest;
+    private Double interest = 0.0D;
     private Double overdueInterest = 0.0D;
-    private Double totalInterest;
+    private Double totalInterest = 0.0D;
     private Double totalAmount;
     private Double amountPaid = 0.0D;
     private Double amountLeftToPay;
