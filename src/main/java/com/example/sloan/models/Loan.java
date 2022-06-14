@@ -47,7 +47,6 @@ public class Loan {
     private LocalDateTime expectedRepayDate;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    @Column(updatable = false)
     private LocalDateTime repayDate;
 
     @UpdateTimestamp
