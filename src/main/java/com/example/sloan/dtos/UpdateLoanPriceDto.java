@@ -9,4 +9,6 @@ public class UpdateLoanPriceDto {
     private LoanType loanType;
     private Double interestRate;
     private int noOfDays;
+    private Double minAmount;
+    private Double maxAmount;
 }

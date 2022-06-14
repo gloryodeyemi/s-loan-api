@@ -18,6 +18,8 @@ public class LoanTypePrice {
     private LoanType loanType;
     private Double interestRate;
     private int noOfDays;
+    private Double minAmount;
+    private Double maxAmount;
 
     @CreationTimestamp
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
