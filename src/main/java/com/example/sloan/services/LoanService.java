@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -34,6 +35,8 @@ public class LoanService {
 
     @Autowired
     LoanTypePriceService loanTypePriceService;
+
+    private static final DecimalFormat df = new DecimalFormat("0.00");
 
     public Loan findById(Long id){
        return loanRepository.findById(id).orElse(null);
