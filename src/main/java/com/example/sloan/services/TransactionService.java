@@ -12,6 +12,8 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -119,5 +121,39 @@ public class TransactionService {
 
     public List<AccountTransaction> findAllTransactionsByAccountId(Long accountId){
         return transactionRepository.findAllByAccountId(accountId);
+    }
+
+    public TransactionStatement generateStatement(Long accountId, String fromDate, String toDate){
+        List<AccountTransaction> transactions = findAllTransactionsByAccountId(accountId);
+        Account userAccount = accountService.findById(accountId);
+        TransactionStatement transactionStatement = new TransactionStatement();
+        LocalDate newFromDate = LocalDate.parse(fromDate);
+        LocalDate newToDate = LocalDate.parse(toDate);
+        transactionStatement.setFromDate(newFromDate);
+        transactionStatement.setToDate(newToDate);
+        transactionStatement.setAccount(userAccount);
+        List<AccountTransaction> transactionList = new ArrayList<>();
+        Double totalCredit = 0.0D;
+        Double totalDebit = 0.0D;
+        for (AccountTransaction transaction: transactions){
+            if (transaction.getTStatus().equals(TStatus.SUCCESSFUL)) {
+                if ((transaction.getDateCreated().toLocalDate().isEqual(newFromDate) || transaction.getDateCreated().toLocalDate().isAfter(newFromDate))
+                        && (transaction.getDateCreated().toLocalDate().isEqual(newToDate) || transaction.getDateCreated().toLocalDate().isBefore(newToDate))) {
+                    switch (transaction.getTType()) {
+                        case DEBIT:
+                            totalDebit += transaction.getAmount();
+                            break;
+                        case CREDIT:
+                            totalCredit += transaction.getAmount();
+                            break;
+                    }
+                    transactionList.add(transaction);
+                }
+            }
+        }
+        transactionStatement.setTotalCredit(totalCredit);
+        transactionStatement.setTotalDebit(totalDebit);
+        transactionStatement.setTransactionList(transactionList);
+        return transactionStatement;
     }
 }

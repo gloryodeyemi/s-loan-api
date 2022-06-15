@@ -4,6 +4,7 @@ import com.example.sloan.dtos.TransactionDto;
 import com.example.sloan.exceptions.AccountException;
 import com.example.sloan.exceptions.TransactionException;
 import com.example.sloan.models.AccountTransaction;
+import com.example.sloan.models.TransactionStatement;
 import com.example.sloan.services.TransactionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -41,5 +42,10 @@ public class TransactionController {
     @GetMapping("/all/{accountId}")
     public ResponseEntity<List<AccountTransaction>> getAllTransactionsByAccountId(@PathVariable Long accountId) {
         return ResponseEntity.ok(transactionService.findAllTransactionsByAccountId(accountId));
+    }
+
+    @GetMapping("/statement")
+    public ResponseEntity<TransactionStatement> generateStatement(@RequestParam Long accountId, @RequestParam String fromDate, @RequestParam String toDate){
+        return ResponseEntity.ok(transactionService.generateStatement(accountId, fromDate, toDate));
     }
 }
