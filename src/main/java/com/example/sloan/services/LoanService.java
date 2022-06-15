@@ -14,7 +14,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.math.RoundingMode;
 import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -38,7 +40,8 @@ public class LoanService {
     @Autowired
     LoanTypePriceService loanTypePriceService;
 
-    private static final DecimalFormat df = new DecimalFormat("0.00");
+//    private static final DecimalFormat df = new DecimalFormat("0.00");
+//    df.setRoundingMode(RoundingMode.DOWN);
 
     public Loan findById(Long id){
        return loanRepository.findById(id).orElse(null);
@@ -137,18 +140,19 @@ public class LoanService {
             if ((!loan.getLoanStatus().equals(LStatus.REPAID)) && loan.getTStatus().equals(TStatus.SUCCESSFUL)){
                 LoanTypePrice loanType = loan.getLoanTypePrice();
                 Double interestPerDay = (loanType.getInterestRate()/100) / loanType.getNoOfDays();
-                Double interest = interestPerDay * loan.getAmount();
+                Double interest = (double) Math.round((interestPerDay * loan.getAmount()) * 100) / 100;
+                System.out.println(interest);
                 LocalDateTime currentDate =  LocalDateTime.now();
                 Long daysDiff = ChronoUnit.DAYS.between(loan.getExpectedRepayDate().toLocalDate(), currentDate.toLocalDate());
                 if (daysDiff > 0){
-                    loan.setOverdueInterest(loan.getOverdueInterest() + interest);
+                    loan.setOverdueInterest((double) Math.round((loan.getOverdueInterest() + interest) * 100) / 100);
                 } else {
-                    loan.setInterest(loan.getInterest() + interest);
+                    loan.setInterest((double) Math.round((loan.getInterest() + interest) * 100) / 100);
                 }
                 loan.setTotalInterest(loan.getInterest() + loan.getOverdueInterest());
                 loan.setTotalAmount(loan.getAmount() + loan.getTotalInterest());
                 loan.setAmountLeftToPay(loan.getTotalAmount() - loan.getAmountPaid());
-                userAccount.setLoanBalance(userAccount.getLoanBalance() + interest);
+                userAccount.setLoanBalance((double) Math.round((userAccount.getLoanBalance() - interest) * 100) / 100);
                 accountRepository.save(userAccount);
                 loanRepository.save(loan);
             }
