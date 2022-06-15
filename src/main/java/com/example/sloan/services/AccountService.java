@@ -1,9 +1,8 @@
 package com.example.sloan.services;
 
 import com.example.sloan.Repositories.AccountRepository;
-import com.example.sloan.exceptions.ErrorException;
+import com.example.sloan.exceptions.AccountException;
 import com.example.sloan.models.Account;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -18,12 +17,12 @@ public class AccountService {
     @Autowired
     PasswordEncoder passwordEncoder;
 
-    public Account createAccount (Account account) throws ErrorException {
+    public Account createAccount (Account account) throws AccountException {
         if (accountRepository.existsByEmailAddress(account.getEmailAddress())){
-            throw new ErrorException("Email exists!");
+            throw new AccountException("Email exists!");
         }
         if (accountRepository.existsByPhoneNumber(account.getPhoneNumber())){
-            throw new ErrorException("Phone number exists!");
+            throw new AccountException("Phone number exists!");
         }
         long number = (long) Math.floor(Math.random() * 9_000_000_000L) + 1_000_000_000L;
         account.setAccountNumber(number);
@@ -48,18 +47,18 @@ public class AccountService {
         return accountRepository.findByAccountNumber(accountNumber);
     }
 
-    public Account accountValidationById(Long accountId) throws ErrorException{
+    public Account accountValidationById(Long accountId) throws AccountException {
         Account account = findById(accountId);
         if (account == null){
-            throw new ErrorException("Account not found!");
+            throw new AccountException("Account error-Account not found!");
         }
         return account;
     }
 
-    public Account accountValidationByNumber(Long accountNumber) throws ErrorException{
+    public Account accountValidationByNumber(Long accountNumber) throws AccountException {
         Account account = findByAccountNumber(accountNumber);
         if (account == null){
-            throw new ErrorException("Account not found!");
+            throw new AccountException("Account error-Account not found!");
         }
         return account;
     }

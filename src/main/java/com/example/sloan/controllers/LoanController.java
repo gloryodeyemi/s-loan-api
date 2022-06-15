@@ -2,9 +2,9 @@ package com.example.sloan.controllers;
 
 import com.example.sloan.dtos.LoanDto;
 import com.example.sloan.dtos.RepayDto;
-import com.example.sloan.dtos.TransactionDto;
-import com.example.sloan.exceptions.ErrorException;
-import com.example.sloan.models.AccountTransaction;
+import com.example.sloan.exceptions.AccountException;
+import com.example.sloan.exceptions.LoanException;
+import com.example.sloan.exceptions.TransactionException;
 import com.example.sloan.models.Loan;
 import com.example.sloan.services.LoanService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,12 +20,12 @@ public class LoanController {
     LoanService loanService;
 
     @PostMapping()
-    public ResponseEntity<Loan> saveLoan(@RequestBody LoanDto loanDto) throws ErrorException {
+    public ResponseEntity<Loan> saveLoan(@RequestBody LoanDto loanDto) throws AccountException, TransactionException {
         return ResponseEntity.ok(loanService.saveLoan(loanDto));
     }
 
     @PostMapping("/repay")
-    public ResponseEntity<Loan> repayLoan(@RequestBody RepayDto repayDto) throws ErrorException {
+    public ResponseEntity<Loan> repayLoan(@RequestBody RepayDto repayDto) throws LoanException, AccountException, TransactionException {
         return ResponseEntity.ok(loanService.repayLoan(repayDto));
     }
 

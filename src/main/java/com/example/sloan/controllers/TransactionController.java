@@ -1,7 +1,8 @@
 package com.example.sloan.controllers;
 
 import com.example.sloan.dtos.TransactionDto;
-import com.example.sloan.exceptions.ErrorException;
+import com.example.sloan.exceptions.AccountException;
+import com.example.sloan.exceptions.TransactionException;
 import com.example.sloan.models.AccountTransaction;
 import com.example.sloan.services.TransactionService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +19,7 @@ public class TransactionController {
     TransactionService transactionService;
 
     @PostMapping()
-    public ResponseEntity<AccountTransaction> saveTransaction(@RequestBody TransactionDto transactionDto) throws ErrorException {
+    public ResponseEntity<AccountTransaction> saveTransaction(@RequestBody TransactionDto transactionDto) throws TransactionException, AccountException {
         return ResponseEntity.ok(transactionService.saveTransaction(transactionDto));
     }
 

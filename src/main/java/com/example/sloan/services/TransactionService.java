@@ -3,7 +3,9 @@ package com.example.sloan.services;
 import com.example.sloan.Repositories.AccountRepository;
 import com.example.sloan.Repositories.TransactionRepository;
 import com.example.sloan.dtos.TransactionDto;
-import com.example.sloan.exceptions.ErrorException;
+import com.example.sloan.exceptions.AccountException;
+import com.example.sloan.exceptions.LoanException;
+import com.example.sloan.exceptions.TransactionException;
 import com.example.sloan.models.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -33,7 +35,7 @@ public class TransactionService {
         return transactionRepository.findAll();
     }
 
-    public AccountTransaction saveTransaction(TransactionDto transactionDto) throws ErrorException{
+    public AccountTransaction saveTransaction(TransactionDto transactionDto) throws AccountException, TransactionException{
         log.info("transactionDto::{}", transactionDto);
         Account account = accountService.accountValidationByNumber(transactionDto.getAccountNo());
         AccountTransaction accountTransaction = new AccountTransaction();
@@ -55,7 +57,7 @@ public class TransactionService {
                 accountTransaction.setSavingsBal(account.getSavingsBalance());
                 accountTransaction.setLoanBal(account.getLoanBalance());
                 transactionRepository.save(accountTransaction);
-                throw new ErrorException(transactionDto.getMessage());
+                throw new TransactionException(transactionDto.getMessage());
             }
             account.setLoanBalance(account.getLoanBalance() - accountTransaction.getAmount());
             accountTransaction.setNarration("Account deposited - LOAN");
@@ -67,14 +69,14 @@ public class TransactionService {
                 accountTransaction.setSavingsBal(account.getSavingsBalance());
                 accountTransaction.setLoanBal(account.getLoanBalance());
                 transactionRepository.save(accountTransaction);
-                throw new ErrorException("Insufficient balance!");
+                throw new TransactionException("Balance error-Insufficient balance!");
             }
             account.setSavingsBalance(account.getSavingsBalance() - accountTransaction.getAmount());
             accountTransaction.setTStatus(TStatus.SUCCESSFUL);
             accountTransaction.setTType(TType.DEBIT);
             accountTransaction.setNarration("Withdrawal successful");
         } else {
-            throw new ErrorException("Invalid channel");
+            throw new TransactionException("Channel error-Invalid channel");
         }
         Account savedAccount = accountRepository.save(account);
         accountTransaction.setSavingsBal(savedAccount.getSavingsBalance());
@@ -82,7 +84,7 @@ public class TransactionService {
         return transactionRepository.save(accountTransaction);
     }
 
-    public AccountTransaction repayLoanTransaction(TransactionDto transactionDto) throws ErrorException{
+    public AccountTransaction repayLoanTransaction(TransactionDto transactionDto) throws LoanException, AccountException {
         Account account = accountService.accountValidationByNumber(transactionDto.getAccountNo());
         AccountTransaction accountTransaction = new AccountTransaction();
         BeanUtils.copyProperties(transactionDto, accountTransaction);
@@ -96,7 +98,7 @@ public class TransactionService {
             accountTransaction.setSavingsBal(account.getSavingsBalance());
             accountTransaction.setLoanBal(account.getLoanBalance());
             transactionRepository.save(accountTransaction);
-            throw new ErrorException("Loan repay failed due to insufficient balance. Please, fund your savings account.");
+            throw new LoanException("Balance error-Loan repay failed due to insufficient balance. Please, fund your savings account.");
         }
         account.setSavingsBalance(account.getSavingsBalance() - transactionDto.getLoanToRepay());
         account.setLoanBalance(account.getLoanBalance() + transactionDto.getLoanToRepay());

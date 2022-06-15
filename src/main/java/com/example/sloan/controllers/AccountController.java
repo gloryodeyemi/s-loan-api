@@ -1,6 +1,6 @@
 package com.example.sloan.controllers;
 
-import com.example.sloan.exceptions.ErrorException;
+import com.example.sloan.exceptions.AccountException;
 import com.example.sloan.models.Account;
 import com.example.sloan.services.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +16,7 @@ public class AccountController {
     AccountService accountService;
 
     @PostMapping()
-    public ResponseEntity<Account> createAccount(@RequestBody Account account) throws ErrorException {
+    public ResponseEntity<Account> createAccount(@RequestBody Account account) throws AccountException {
         return ResponseEntity.ok(accountService.createAccount(account));
     }
 

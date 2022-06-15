@@ -5,7 +5,9 @@ import com.example.sloan.Repositories.LoanRepository;
 import com.example.sloan.dtos.LoanDto;
 import com.example.sloan.dtos.RepayDto;
 import com.example.sloan.dtos.TransactionDto;
-import com.example.sloan.exceptions.ErrorException;
+import com.example.sloan.exceptions.AccountException;
+import com.example.sloan.exceptions.LoanException;
+import com.example.sloan.exceptions.TransactionException;
 import com.example.sloan.models.*;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,7 +52,7 @@ public class LoanService {
         return loanRepository.findAll();
     }
 
-    public Loan saveLoan(LoanDto loanDto) throws ErrorException {
+    public Loan saveLoan(LoanDto loanDto) throws AccountException, TransactionException {
         // get the accounts
         Account userAccount = accountService.accountValidationByNumber(loanDto.getAccountNumber());
         Account companyAccount = accountService.findById(1L);
@@ -81,28 +83,28 @@ public class LoanService {
         switch (loanDto.getLoanType()){
             case ANNUAL:
                 if (loanDto.getAmount() < loanTypePrice.getMinAmount()){
-                    failedLoan(loan, userAccount, "Amount limit error", "Amount is lesser than the minimum amount for this loan type." +
+                    failedLoan(loan, userAccount, "Amount limit error", "Amount limit error-Amount is lesser than the minimum amount for this loan type." +
                             " Please enter a bigger amount.");
                 }
                 break;
             case WEEKLY: case BI_WEEKLY: case MONTHLY: case QUARTERLY: case BI_ANNUAL:
                 if (loanDto.getAmount() < loanTypePrice.getMinAmount() || loanDto.getAmount() > loanTypePrice.getMaxAmount()) {
-                    failedLoan(loan, userAccount, "Amount limit error", "Please enter an amount within the limits of this loan type.");
+                    failedLoan(loan, userAccount, "Amount limit error", "Amount limit error-Please enter an amount within the limits of this loan type.");
                 }
                 break;
             default:
-                failedLoan(loan, userAccount, "Loan type error", "Please choose a valid loan type");
+                failedLoan(loan, userAccount, "Loan type error", "Loan type error-Please choose a valid loan type");
         }
         // check if customer is eligible to borrow amount
         if (loan.getAmount() > ((userAccount.getSavingsBalance() * 2) + userAccount.getLoanBalance())){
             // if not eligible
-            failedLoan(loan, userAccount, "Ineligible to borrow amount", "You are not eligible to borrow that amount, please try with" +
+            failedLoan(loan, userAccount, "Ineligible to borrow amount", "Amount limit error-You are not eligible to borrow that amount, please try with" +
                     " a lesser amount.");
         }
         // if eligible
         Double companyBal = companyAccount.getSavingsBalance();
         if (companyBal < loanDto.getAmount()) {
-            failedLoan(loan, userAccount, "Operation failed", "Something went wrong!");
+            failedLoan(loan, userAccount, "Operation failed", "Operation error-Something went wrong!");
         }
         TransactionDto transactionDto = new TransactionDto();
         transactionDto.setAccountNo(loanDto.getAccountNumber());
@@ -116,7 +118,7 @@ public class LoanService {
         return loanRepository.save(loan);
     }
 
-    public void failedLoan(Loan loan, Account account, String narration, String message) throws ErrorException{
+    public void failedLoan(Loan loan, Account account, String narration, String message) throws AccountException, TransactionException{
         TransactionDto transactionDto = new TransactionDto();
         transactionDto.setAccountNo(account.getAccountNumber());
         loan.setTStatus(TStatus.FAILED);
@@ -154,7 +156,7 @@ public class LoanService {
         System.out.println("running scheduled task");
     }
 
-    public Loan repayLoan(RepayDto repayDto) throws ErrorException{
+    public Loan repayLoan(RepayDto repayDto) throws AccountException, LoanException, TransactionException {
         //find loan
         Loan loan = findById(repayDto.getLoanId());
         // find user account
