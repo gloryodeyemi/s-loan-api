@@ -1,6 +1,7 @@
 package com.example.sloan.models;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -44,9 +45,11 @@ public class Account {
     private Double loanBalance = 0.00D;
 
     @Column(nullable = false)
+    @JsonIgnore
     private int pin;
 
     @Column(nullable = false)
+    @JsonIgnore
     private String password;
 
     @CreationTimestamp
