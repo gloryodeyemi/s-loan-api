@@ -140,19 +140,19 @@ public class LoanService {
             if ((!loan.getLoanStatus().equals(LStatus.REPAID)) && loan.getTStatus().equals(TStatus.SUCCESSFUL)){
                 LoanTypePrice loanType = loan.getLoanTypePrice();
                 Double interestPerDay = (loanType.getInterestRate()/100) / loanType.getNoOfDays();
-                Double interest = (double) Math.round((interestPerDay * loan.getAmount()) * 100) / 100;
+                Double interest = roundedFigure(interestPerDay * loan.getAmount());
                 System.out.println(interest);
                 LocalDateTime currentDate =  LocalDateTime.now();
                 Long daysDiff = ChronoUnit.DAYS.between(loan.getExpectedRepayDate().toLocalDate(), currentDate.toLocalDate());
                 if (daysDiff > 0){
-                    loan.setOverdueInterest((double) Math.round((loan.getOverdueInterest() + interest) * 100) / 100);
+                    loan.setOverdueInterest(roundedFigure(loan.getOverdueInterest() + interest));
                 } else {
-                    loan.setInterest((double) Math.round((loan.getInterest() + interest) * 100) / 100);
+                    loan.setInterest(roundedFigure(loan.getInterest() + interest));
                 }
                 loan.setTotalInterest(loan.getInterest() + loan.getOverdueInterest());
                 loan.setTotalAmount(loan.getAmount() + loan.getTotalInterest());
                 loan.setAmountLeftToPay(loan.getTotalAmount() - loan.getAmountPaid());
-                userAccount.setLoanBalance((double) Math.round((userAccount.getLoanBalance() - interest) * 100) / 100);
+                userAccount.setLoanBalance(roundedFigure(userAccount.getLoanBalance() - interest));
                 accountRepository.save(userAccount);
                 loanRepository.save(loan);
             }
@@ -189,5 +189,9 @@ public class LoanService {
         loan.setAmountLeftToPay(loan.getAmountLeftToPay() - repayDto.getLoanToRepay());
         loan.setAmountPaid(loan.getAmountPaid() + repayDto.getLoanToRepay());
         return loanRepository.save(loan);
+    }
+
+    public Double roundedFigure(Double figureToRound) {
+        return (double) Math.round((figureToRound) * 100) / 100;
     }
 }
