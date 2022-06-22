@@ -93,7 +93,7 @@ public class TransactionService {
         accountTransaction.setAccountId(account.getId());
         accountTransaction.setAmount(transactionDto.getLoanToRepay());
         accountTransaction.setTRef(generateRef(Channel.REPAY));
-        if (account.getSavingsBalance() < transactionDto.getLoanToRepay()){
+        if (transactionDto.getLoanToRepay() == 0D || account.getSavingsBalance() < transactionDto.getLoanToRepay()){
             accountTransaction.setTStatus(TStatus.FAILED);
             accountTransaction.setTType(TType.DEBIT);
             accountTransaction.setNarration("Loan repay failed");

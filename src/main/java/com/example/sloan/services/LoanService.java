@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -158,6 +159,67 @@ public class LoanService {
             }
         }
         System.out.println("running scheduled task");
+    }
+
+    @Scheduled(cron = "0 0 8 * * ?")
+    public void scheduledAutomaticLoanRepayment() {
+        List<Loan> allLoans = findAll();
+        for (Loan loan : allLoans) {
+            if ((!loan.getLoanStatus().equals(LStatus.REPAID)) && loan.getTStatus().equals(TStatus.SUCCESSFUL)) {
+                LocalDate todayDate = LocalDate.now();
+                if (loan.getExpectedRepayDate().toLocalDate().equals(todayDate)) {
+                    repayLoan(getDto(loan));
+                }
+            }
+        }
+    }
+
+    @Scheduled(cron = "0 0 8 * * *")
+    public void scheduledAutomaticLoanRepaymentThreeTrials() {
+        List<Loan> allLoans = findAll();
+        for (Loan loan : allLoans) {
+            if ((!loan.getLoanStatus().equals(LStatus.REPAID)) && loan.getTStatus().equals(TStatus.SUCCESSFUL)) {
+                LocalDate todayDate = LocalDate.now();
+                LocalDate repayDate = loan.getExpectedRepayDate().toLocalDate();
+                LocalDate dateLimit = repayDate.plusDays(3);
+                if (todayDate.isAfter(repayDate) && (todayDate.isBefore(dateLimit) || todayDate.isEqual(dateLimit))) {
+                    repayLoan(getDto(loan));
+                }
+            }
+        }
+    }
+
+    @Scheduled(cron = "0 0 8 * * ?")
+    public void scheduledAutomaticLoanRepaymentAfterThreeTrials() {
+        List<Loan> allLoans = findAll();
+        for (Loan loan : allLoans) {
+            // find user account
+            Account userAccount = accountService.accountValidationById(loan.getAccountId());
+            if ((!loan.getLoanStatus().equals(LStatus.REPAID)) && loan.getTStatus().equals(TStatus.SUCCESSFUL)) {
+                LocalDate todayDate = LocalDate.now();
+                LocalDate dateLimit = loan.getExpectedRepayDate().toLocalDate().plusDays(3);
+                if (todayDate.isAfter(dateLimit)) {
+                    // get user savings bal
+                    Double bal = userAccount.getSavingsBalance();
+                    RepayDto repayDto = getDto(loan);
+                    if (bal > loan.getAmountLeftToPay()){
+                        repayLoan(repayDto);
+                    } else {
+                        repayDto.setLoanToRepay(bal);
+                        repayLoan(repayDto);
+                    }
+                }
+            }
+        }
+    }
+
+    public RepayDto getDto(Loan loan){
+        RepayDto repayDto = new RepayDto();
+        repayDto.setLoanToRepay(loan.getAmountLeftToPay());
+        repayDto.setLoanId(loan.getId());
+        repayDto.setAmountToSave(0D);
+        repayDto.setDescription("Automatic loan repayment");
+        return repayDto;
     }
 
     public Loan repayLoan(RepayDto repayDto) throws AccountException, LoanException, TransactionException {
