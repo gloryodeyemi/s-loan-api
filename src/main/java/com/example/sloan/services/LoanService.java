@@ -161,13 +161,14 @@ public class LoanService {
         System.out.println("running scheduled task");
     }
 
-    @Scheduled(cron = "0 0 8 * * ?")
+    @Scheduled(cron = "0 0 8 * * *")
     public void scheduledAutomaticLoanRepayment() {
         List<Loan> allLoans = findAll();
         for (Loan loan : allLoans) {
             if ((!loan.getLoanStatus().equals(LStatus.REPAID)) && loan.getTStatus().equals(TStatus.SUCCESSFUL)) {
                 LocalDate todayDate = LocalDate.now();
                 if (loan.getExpectedRepayDate().toLocalDate().equals(todayDate)) {
+                    System.out.println("running scheduled task 1");
                     repayLoan(getDto(loan));
                 }
             }
@@ -183,13 +184,14 @@ public class LoanService {
                 LocalDate repayDate = loan.getExpectedRepayDate().toLocalDate();
                 LocalDate dateLimit = repayDate.plusDays(3);
                 if (todayDate.isAfter(repayDate) && (todayDate.isBefore(dateLimit) || todayDate.isEqual(dateLimit))) {
+                    System.out.println("running scheduled task 2");
                     repayLoan(getDto(loan));
                 }
             }
         }
     }
 
-    @Scheduled(cron = "0 0 8 * * ?")
+    @Scheduled(cron = "0 0 8 * * *")
     public void scheduledAutomaticLoanRepaymentAfterThreeTrials() {
         List<Loan> allLoans = findAll();
         for (Loan loan : allLoans) {
@@ -203,8 +205,10 @@ public class LoanService {
                     Double bal = userAccount.getSavingsBalance();
                     RepayDto repayDto = getDto(loan);
                     if (bal > loan.getAmountLeftToPay()){
+                        System.out.println("running scheduled task 3");
                         repayLoan(repayDto);
                     } else {
+                        System.out.println("running scheduled task 3");
                         repayDto.setLoanToRepay(bal);
                         repayLoan(repayDto);
                     }
@@ -212,6 +216,61 @@ public class LoanService {
             }
         }
     }
+
+//    @Scheduled(cron = "0/20 * * * * ?")
+//    public void scheduledAutomaticLoanRepayment() {
+//        List<Loan> allLoans = findAll();
+//        for (Loan loan : allLoans) {
+//            if ((!loan.getLoanStatus().equals(LStatus.REPAID)) && loan.getTStatus().equals(TStatus.SUCCESSFUL)) {
+//                LocalDate todayDate = LocalDate.now();
+//                if (loan.getExpectedRepayDate().toLocalDate().equals(todayDate)) {
+//                    repayLoan(getDto(loan));
+//                }
+//            }
+//        }
+//        System.out.println("running scheduled task");
+//    }
+
+//    @Scheduled(cron = "0 0 8 * * *")
+//    public void scheduledAutomaticLoanRepaymentThreeTrials() {
+//        List<Loan> allLoans = findAll();
+//        for (Loan loan : allLoans) {
+//            if ((!loan.getLoanStatus().equals(LStatus.REPAID)) && loan.getTStatus().equals(TStatus.SUCCESSFUL)) {
+//                LocalDate todayDate = LocalDate.now();
+//                LocalDate repayDate = loan.getExpectedRepayDate().toLocalDate();
+//                LocalDate dateLimit = repayDate.plusDays(3);
+//                if (todayDate.isAfter(repayDate) && (todayDate.isBefore(dateLimit) || todayDate.isEqual(dateLimit))) {
+//                    repayLoan(getDto(loan));
+//                }
+//            }
+//        }
+//        System.out.println("running scheduled task");
+//    }
+
+//    @Scheduled(cron = "0 0 8 * * ?")
+//    public void scheduledAutomaticLoanRepaymentAfterThreeTrials() {
+//        List<Loan> allLoans = findAll();
+//        for (Loan loan : allLoans) {
+//            // find user account
+//            Account userAccount = accountService.accountValidationById(loan.getAccountId());
+//            if ((!loan.getLoanStatus().equals(LStatus.REPAID)) && loan.getTStatus().equals(TStatus.SUCCESSFUL)) {
+//                LocalDate todayDate = LocalDate.now();
+//                LocalDate dateLimit = loan.getExpectedRepayDate().toLocalDate().plusDays(3);
+//                if (todayDate.isAfter(dateLimit)) {
+//                    // get user savings bal
+//                    Double bal = userAccount.getSavingsBalance();
+//                    RepayDto repayDto = getDto(loan);
+//                    if (bal > loan.getAmountLeftToPay()){
+//                        repayLoan(repayDto);
+//                    } else {
+//                        repayDto.setLoanToRepay(bal);
+//                        repayLoan(repayDto);
+//                    }
+//                }
+//            }
+//        }
+//        System.out.println("running scheduled task");
+//    }
 
     public RepayDto getDto(Loan loan){
         RepayDto repayDto = new RepayDto();
