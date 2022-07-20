@@ -57,27 +57,24 @@ public class LoanService {
     }
 
     public Loan saveLoan(LoanDto loanDto) throws AccountException, TransactionException {
-        // get the accounts
         Account userAccount = accountService.accountValidationByNumber(loanDto.getAccountNumber());
         Account companyAccount = accountService.findById(1L);
-        // create a new loan object
         Loan loan = new Loan();
         BeanUtils.copyProperties(loanDto, loan);
         loan.setChannel(Channel.LOAN);
         loan.setAccountId(userAccount.getId());
-        // generate loan reference
         Random randN = new Random( System.currentTimeMillis() );
         int randomNumber = (1 + randN.nextInt(2)) * 10000 + randN.nextInt(10000);
         String loanRef = "Ref-" + userAccount.getFirstName().toLowerCase(Locale.ROOT) + "-" + userAccount.getLastName().toLowerCase(Locale.ROOT) +
                 "-" + randomNumber;
         loan.setLoanRef(loanRef);
-        // set loan type
+
         LoanTypePrice loanTypePrice = loanTypePriceService.getLoanPriceByLoanType(loanDto.getLoanType());
         loan.setLoanTypePrice(loanTypePrice);
-        // set other entities
+
         loan.setTotalAmount(loanDto.getAmount() + loan.getTotalInterest());
         loan.setAmountLeftToPay(loan.getTotalAmount());
-        // set expected return date
+
         loan.setDateBorrowed(LocalDateTime.now());
         LocalDateTime date = ChronoUnit.DAYS.addTo(loan.getDateBorrowed().toLocalDate(), loanTypePrice.getNoOfDays()).atStartOfDay();
         loan.setExpectedRepayDate(date);
@@ -99,7 +96,7 @@ public class LoanService {
             default:
                 failedLoan(loan, userAccount, "Loan type error", "Loan type error-Please choose a valid loan type");
         }
-        // check if customer is eligible to borrow amount
+
         if (loan.getAmount() > ((userAccount.getSavingsBalance() * 2) + userAccount.getLoanBalance())){
             // if not eligible
             failedLoan(loan, userAccount, "Ineligible to borrow amount", "Amount limit error-You are not eligible to borrow that amount, please try with" +
@@ -282,25 +279,23 @@ public class LoanService {
     }
 
     public Loan repayLoan(RepayDto repayDto) throws AccountException, LoanException, TransactionException {
-        //find loan
         Loan loan = findById(repayDto.getLoanId());
-        // find user account
         Account userAccount = accountService.accountValidationById(loan.getAccountId());
-        // create new instance of transaction
+
         TransactionDto transactionDto = new TransactionDto();
         transactionDto.setLoanToRepay(repayDto.getLoanToRepay());
         transactionDto.setAmount(repayDto.getAmountToSave());
         transactionDto.setDescription(repayDto.getDescription());
         transactionDto.setAccountNo(userAccount.getAccountNumber());
-        // save amount if greater than 0
+
         if (repayDto.getAmountToSave() > 0) {
             transactionDto.setChannel(Channel.SAVE);
             transactionService.saveTransaction(transactionDto);
         }
-        // repay loan
+
         transactionDto.setChannel(Channel.REPAY);
         transactionService.repayLoanTransaction(transactionDto);
-        // get repay date
+
         LocalDateTime repayDate =  LocalDateTime.now();
         loan.setRepayDate(repayDate);
         loan.setLoanStatus(LStatus.REPAID);
